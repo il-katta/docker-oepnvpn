@@ -51,6 +51,8 @@ client
 nobind
 dev tun
 #redirect-gateway def1
+comp-lzo
+resolv-retry infinite
 
 <key>
 `cat key.pem`
@@ -72,6 +74,4 @@ EOF
 
 iptables -t nat -A POSTROUTING -s 192.168.255.0/24 -o eth0 -j MASQUERADE
 
-touch openvpn-out.log
-while true ; do openvpn server.conf ; done >> openvpn-out.log &
-tail -F *.log
+while true ; do openvpn server.conf ; done | tee openvpn-out.log
