@@ -222,20 +222,12 @@ explicit-exit-notify 1
 EOF
 
 MY_IP_ADDR=$(curl -s http://myip.enix.org/REMOTE_ADDR)
-[ "$MY_IP_ADDR" ] || exit 1
+[ -n "$MY_IP_ADDR" ] || exit 1
 
 new_client client
 
+sysctl net.ipv4.ip_forward=1 || true
+sysctl net.ipv6.conf.all.forwarding=1 || true
 iptables -t nat -A POSTROUTING -s 192.168.255.0/24 -o eth0 -j MASQUERADE
-
-
-term_handler() {
-    echo "term_handler"
-    killall openvpn
-    exit 137; # 128 + 9 -- SIGKILL
-}
-trap 'term_handler' SIGTERM
-trap 'term_handler' SIGKILL
-trap 'term_handler' SIGINT
 
 exec openvpn --config server.conf
