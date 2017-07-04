@@ -5,7 +5,6 @@ RUN set -x && \
         /bin/echo -e "Acquire::HTTP::Proxy \"$APT_PROXY\";\nAcquire::HTTPS::Proxy \"$APT_PROXY\";\nAcquire::http::Pipeline-Depth \"23\";" > \
             /etc/apt/apt.conf.d/01proxy
 
-
 RUN set -x && \
     apt-get update -q && \
     apt-get install -qy openvpn iptables curl && \
@@ -16,4 +15,7 @@ ADD ./bin /bin
 RUN chmod +x /bin/*
 VOLUME /etc/openvpn
 EXPOSE 1194/udp
+ENV CONF_DIR /etc/openvpn
+WORKDIR $CONF_DIR
+
 CMD /bin/run

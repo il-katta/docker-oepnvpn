@@ -1,0 +1,59 @@
+#!/bin/sh
+set -e
+CLIENT_CN=$1
+
+[ -z "$CLIENT_CN" ] && exit 1
+
+cd "${CONF_DIR}"
+
+mkdir -p "clients/$CLIENT_CN"
+
+[ -f "index.txt.attr" ] || touch index.txt.attr
+
+[ -f "clients/$CLIENT_CN/client.key" ] ||
+    openssl req -new -nodes -config openssl.cnf \
+        -keyout "clients/$CLIENT_CN/client.key" -out "clients/$CLIENT_CN/client.csr" \
+        -subj "/CN=$CLIENT_CN/O=OpenVPN-Client/emailAddress=$CLIENT_CN@${HOSTNAME}"
+
+[ -f "clients/$CLIENT_CN/client.crt" ] ||
+    openssl ca -batch -config openssl.cnf \
+        -out "clients/$CLIENT_CN/client.crt" -in "clients/$CLIENT_CN/client.csr"
+
+
+MY_IP_ADDR=$(curl -s http://myip.enix.org/REMOTE_ADDR 2>/dev/null)
+[ "$MY_IP_ADDR" ] || exit 1
+[ -f "clients/$CLIENT_CN/client.key" ] || exit 1
+[ -f "clients/$CLIENT_CN/client.crt" ] || exit 1
+
+[ -f "clients/$CLIENT_CN/client.ovpn" ] || tee "clients/$CLIENT_CN/client.ovpn" <<EOF
+# CN=$CLIENT_CN
+client
+nobind
+dev tun
+#redirect-gateway def1
+comp-lzo
+resolv-retry infinite
+remote-cert-tls server
+cipher AES-256-CBC
+
+<key>
+`cat "clients/$CLIENT_CN/client.key"`
+</key>
+<cert>
+`cat "clients/$CLIENT_CN/client.crt"`
+</cert>
+<ca>
+`cat ca.crt`
+</ca>
+<dh>
+`cat dh.crt`
+</dh>
+key-direction 1
+<tls-auth>
+`cat ta.key`
+</tls-auth>
+
+<connection>
+remote $MY_IP_ADDR 1194 udp
+</connection>
+EOF
