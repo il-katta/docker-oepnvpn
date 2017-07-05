@@ -8,7 +8,7 @@ RUN set -x && \
 
 RUN set -x && \
     apt-get update -q && \
-    apt-get install -qy openvpn iptables curl && \
+    apt-get install -qy openvpn iptables curl systune && \
     apt-get clean all && \
     rm -rf /var/lib/apt/lists/*
     
