@@ -7,15 +7,18 @@ RUN set -x && \
 
 RUN set -x && \
     apt-get update -q && \
-    apt-get install -qy openvpn iptables curl && \
+    apt-get install -qy openvpn iptables curl systune && \
     apt-get clean all && \
     rm -rf /var/lib/apt/lists/*
     
 ADD ./bin /bin
 RUN chmod +x /bin/*
-VOLUME /etc/openvpn
 EXPOSE 1194/udp
-ENV CONF_DIR /etc/openvpn
+ENV CONF_DIR /conf
+ENV CERTS_DIR /certs
+
+VOLUME $CONF_DIR $CERTS_DIR
+
 WORKDIR $CONF_DIR
 
-CMD /bin/run
+CMD /bin/ovpn_run

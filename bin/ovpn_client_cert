@@ -1,0 +1,23 @@
+
+#!/bin/sh
+set -ex
+
+CLIENT_CN=$1
+[ -n "$CLIENT_CN" ] || exit 1
+
+cd "$CERTS_DIR"
+
+[ -f openssl.cnf ] || exit 1
+
+mkdir -p "clients/$CLIENT_CN"
+
+[ -f "index.txt.attr" ] || touch index.txt.attr
+
+[ -f "clients/$CLIENT_CN/client.key" ] ||
+    openssl req -new -nodes -config openssl.cnf \
+        -keyout "clients/$CLIENT_CN/client.key" -out "clients/$CLIENT_CN/client.csr" \
+        -subj "/CN=$CLIENT_CN/O=OpenVPN-Client/emailAddress=$CLIENT_CN@${HOSTNAME}"
+
+[ -f "clients/$CLIENT_CN/client.crt" ] ||
+    openssl ca -batch -config openssl.cnf \
+        -out "clients/$CLIENT_CN/client.crt" -in "clients/$CLIENT_CN/client.csr"

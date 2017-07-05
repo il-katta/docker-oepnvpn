@@ -1,0 +1,53 @@
+#!/bin/bash
+set -ex
+
+/bin/ovpn_server_certs
+
+mkdir -p "$CONF_DIR"
+pushd "$CONF_DIR"
+
+[ -f ipp.txt ] ||
+    touch ipp.txt
+
+[ -f server.conf ] || cat >server.conf <<EOF
+server 192.168.255.128 255.255.255.128
+verb 3
+
+<key>
+`cat "$CERTS_DIR/server.key"`
+</key>
+
+<ca>
+`cat "$CERTS_DIR/ca.crt"`
+</ca>
+
+<cert>
+`cat "$CERTS_DIR/server.crt"`
+</cert>
+
+<dh>
+`cat "$CERTS_DIR/dh.crt"`
+</dh>
+
+key-direction 0
+<tls-auth>
+`cat "$CERTS_DIR/ta.key"`
+</tls-auth>
+
+cipher AES-256-CBC
+keepalive 10 60
+persist-key
+persist-tun
+push "dhcp-option DNS 8.8.8.8"
+push "dhcp-option DNS 8.8.4.4"
+comp-lzo
+client-to-client
+ifconfig-pool-persist ipp.txt 0
+
+proto udp
+port 1194
+dev tun
+status openvpn-status.log
+#log-append openvpn.log
+explicit-exit-notify 1
+EOF

@@ -1,0 +1,51 @@
+#!/bin/sh
+set -e
+
+CLIENT_CN=$1
+
+[ -n "$CLIENT_CN" ] || exit 1
+
+/bin/ovpn_client_cert "$CLIENT_CN"
+
+cd "${CONF_DIR}"
+
+mkdir -p "clients/$CLIENT_CN"
+
+MY_IP_ADDR=$(curl -s http://myip.enix.org/REMOTE_ADDR 2>/dev/null)
+[ -n "$MY_IP_ADDR" ] || exit 1
+[ -f "$CERTS_DIR/clients/$CLIENT_CN/client.key" ] || exit 1
+[ -f "$CERTS_DIR/clients/$CLIENT_CN/client.crt" ] || exit 1
+
+[ -f "clients/$CLIENT_CN/client.ovpn" ] || tee "clients/$CLIENT_CN/client.ovpn" <<EOF
+# CN=$CLIENT_CN
+client
+nobind
+dev tun
+#redirect-gateway def1
+comp-lzo
+resolv-retry infinite
+remote-cert-tls server
+cipher AES-256-CBC
+keepalive 10 60
+
+<key>
+`cat "$CERTS_DIR/clients/$CLIENT_CN/client.key"`
+</key>
+<cert>
+`cat "$CERTS_DIR/clients/$CLIENT_CN/client.crt"`
+</cert>
+<ca>
+`cat "$CERTS_DIR/ca.crt"`
+</ca>
+<dh>
+`cat "$CERTS_DIR/dh.crt"`
+</dh>
+key-direction 1
+<tls-auth>
+`cat "$CERTS_DIR/ta.key"`
+</tls-auth>
+
+<connection>
+remote $MY_IP_ADDR 1194 udp
+</connection>
+EOF

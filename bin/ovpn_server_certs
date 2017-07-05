@@ -1,20 +1,19 @@
 #!/bin/bash
 set -ex
 
-[ -d /dev/net ] ||
-    mkdir -p /dev/net
-[ -c /dev/net/tun ] ||
-    mknod /dev/net/tun c 10 200
+mkdir -p "$CERTS_DIR"
+
+pushd "$CERTS_DIR"
 
 [ -f openssl.cnf ] ||
-    cat <<EOF > openssl.cnf
+    cat > openssl.cnf <<EOF
 [ ca ]
 default_ca	= CA_default		# The default ca section
 
 ####################################################################
 [ CA_default ]
 
-dir		=  .		# Where everything is kept
+dir		= .					# Where everything is kept
 certs		= \$dir			# Where the issued certs are kept
 crl_dir		= \$dir			# Where the issued crl are kept
 database	= \$dir/index.txt	# database index file.
@@ -146,6 +145,7 @@ extendedKeyUsage       = serverAuth
 keyUsage               = digitalSignature, keyEncipherment
 EOF
 
+
 [ -f ta.key ] ||
     openvpn --genkey --secret ta.key
 
@@ -160,7 +160,6 @@ EOF
         -config openssl.cnf
 chmod 600 ca.key
 
-
 # Create server key and cert
 [ -f server.key ] ||
     openssl req -new -nodes -config openssl.cnf -extensions server \
@@ -174,60 +173,4 @@ touch index.txt
     openssl ca -batch -config openssl.cnf -extensions server \
         -out server.crt -in server.csr
 
-[ -f server.conf ] ||
-    echo "client,192.168.255.134" > ipp.txt
-
-[ -f server.conf ] || cat >server.conf <<EOF
-server 192.168.255.128 255.255.255.128
-verb 3
-
-<key>
-`cat server.key`
-</key>
-
-<ca>
-`cat ca.crt`
-</ca>
-
-<cert>
-`cat server.crt`
-</cert>
-
-<dh>
-`cat dh.crt`
-</dh>
-
-key-direction 0
-<tls-auth>
-`cat ta.key`
-</tls-auth>
-
-cipher AES-256-CBC
-keepalive 10 60
-persist-key
-persist-tun
-push "dhcp-option DNS 8.8.8.8"
-push "dhcp-option DNS 8.8.4.4"
-keepalive 10 120
-comp-lzo
-client-to-client
-ifconfig-pool-persist ipp.txt 0
-
-proto udp
-port 1194
-dev tun
-status openvpn-status.log
-#log-append openvpn.log
-explicit-exit-notify 1
-EOF
-
-MY_IP_ADDR=$(curl -s http://myip.enix.org/REMOTE_ADDR)
-[ -n "$MY_IP_ADDR" ] || exit 1
-
-new_client client
-
-sysctl net.ipv4.ip_forward=1 || true
-sysctl net.ipv6.conf.all.forwarding=1 || true
-iptables -t nat -A POSTROUTING -s 192.168.255.0/24 -o eth0 -j MASQUERADE
-
-exec openvpn --config server.conf
+popd
