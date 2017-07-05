@@ -21,7 +21,7 @@ mkdir -p "clients/$CLIENT_CN"
 
 
 MY_IP_ADDR=$(curl -s http://myip.enix.org/REMOTE_ADDR 2>/dev/null)
-[ -z "$MY_IP_ADDR" ] || exit 1
+[ -n "$MY_IP_ADDR" ] || exit 1
 [ -f "clients/$CLIENT_CN/client.key" ] || exit 1
 [ -f "clients/$CLIENT_CN/client.crt" ] || exit 1
 
