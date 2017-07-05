@@ -2,7 +2,7 @@
 set -e
 CLIENT_CN=$1
 
-[ -z "$CLIENT_CN" ] && exit 1
+[ -n "$CLIENT_CN" ] || exit 1
 
 cd "${CONF_DIR}"
 
