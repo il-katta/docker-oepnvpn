@@ -7,7 +7,7 @@ RUN set -x && \
 
 RUN set -x && \
     apt-get update -q && \
-    apt-get install -qy openvpn iptables curl systune procps && \
+    apt-get install -qy openvpn iptables curl systune procps tcpdump && \
     apt-get clean all && \
     rm -rf /var/lib/apt/lists/*
     
