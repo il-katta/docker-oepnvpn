@@ -7,7 +7,7 @@ RUN set -x && \
 
 RUN set -x && \
     apt-get update -q && \
-    apt-get install -qy openvpn iptables curl systune && \
+    apt-get install -qy openvpn iptables curl systune procps tcpdump netcat-traditional && \
     apt-get clean all && \
     rm -rf /var/lib/apt/lists/*
     
@@ -23,3 +23,5 @@ VOLUME $CONF_DIR $CERTS_DIR
 WORKDIR $CONF_DIR
 
 CMD /bin/ovpn_run
+
+HEALTHCHECK CMD nc -uz 127.0.0.1 1195
