@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-CLIENT_CN=$1
+CLIENT_CN="$1"
 
 [ -n "$CLIENT_CN" ] || exit 1
 
@@ -11,8 +11,12 @@ cd "${CONF_DIR}"
 
 mkdir -p "clients/$CLIENT_CN"
 
-MY_IP_ADDR=$(curl -s http://myip.enix.org/REMOTE_ADDR 2>/dev/null)
-[ -n "$MY_IP_ADDR" ] || exit 1
+
+if [ -z "$REMOTE_ADDRESS" ] ; then
+    REMOTE_ADDRESS=$(curl -s http://myip.enix.org/REMOTE_ADDR 2>/dev/null)
+    [ -n "$REMOTE_ADDRESS" ] || exit 1
+fi
+
 [ -f "$CERTS_DIR/clients/$CLIENT_CN/client.key" ] || exit 1
 [ -f "$CERTS_DIR/clients/$CLIENT_CN/client.crt" ] || exit 1
 
@@ -29,23 +33,23 @@ cipher AES-256-CBC
 keepalive 10 60
 
 <key>
-`cat "$CERTS_DIR/clients/$CLIENT_CN/client.key"`
+$(cat "$CERTS_DIR/clients/$CLIENT_CN/client.key")
 </key>
 <cert>
-`cat "$CERTS_DIR/clients/$CLIENT_CN/client.crt"`
+$(cat "$CERTS_DIR/clients/$CLIENT_CN/client.crt")
 </cert>
 <ca>
-`cat "$CERTS_DIR/ca.crt"`
+$(cat "$CERTS_DIR/ca.crt")
 </ca>
 <dh>
-`cat "$CERTS_DIR/dh.crt"`
+$(cat "$CERTS_DIR/dh.crt")
 </dh>
 key-direction 1
 <tls-auth>
-`cat "$CERTS_DIR/ta.key"`
+$(cat "$CERTS_DIR/ta.key")
 </tls-auth>
 
 <connection>
-remote $MY_IP_ADDR 1194 udp
+remote $REMOTE_ADDRESS 1194 udp
 </connection>
 EOF
